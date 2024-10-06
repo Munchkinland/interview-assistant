@@ -1,0 +1,57 @@
+GPT-4o Mini
+
+Aquí tienes un ejemplo de un currículum vitae (CV) dummy que puedes utilizar para probar. Este CV incluye secciones comunes como información personal, experiencia laboral, educación y habilidades.
+
+Nombre: Juan Pérez
+
+Dirección: Calle Falsa 123, Ciudad, País
+
+Teléfono: (123) 456-7890
+
+Correo Electrónico: juan.perez@email.com
+
+LinkedIn: linkedin.com/in/juanperez
+Perfil Profesional
+
+Profesional altamente motivado con experiencia en [tu área de especialización]. Habilidades en [habilidades clave] y un historial comprobado de [logros o contribuciones relevantes]. Buscando una oportunidad para aplicar mis conocimientos y habilidades en un entorno dinámico.
+Experiencia Laboral
+
+Analista de Datos
+
+Empresa XYZ, Ciudad
+
+Enero 2022 - Presente
+
+    Analizar grandes conjuntos de datos para identificar tendencias y patrones.
+    Colaborar con equipos interfuncionales para mejorar procesos y aumentar la eficiencia.
+    Presentar informes y visualizaciones de datos a la alta dirección.
+
+Asistente de Marketing
+
+Empresa ABC, Ciudad
+
+Junio 2020 - Diciembre 2021
+
+    Ayudar en la planificación y ejecución de campañas de marketing digital.
+    Realizar investigaciones de mercado para identificar nuevas oportunidades.
+    Gestionar las redes sociales y crear contenido atractivo.
+
+Educación
+
+Licenciatura en Administración de Empresas
+
+Universidad de Ejemplo, Ciudad
+
+Graduado: Mayo 2020
+Habilidades
+
+    Análisis de datos
+    Marketing digital
+    Comunicación efectiva
+    Trabajo en equipo
+    Gestión del tiempo
+
+Idiomas
+
+    Español (nativo)
+    Inglés (intermedio)
