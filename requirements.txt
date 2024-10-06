@@ -1,0 +1,9 @@
+# Dependencias para la transcripción y generación de respuestas
+torch  # Asegúrate de usar la versión adecuada para tu modelo de Hugging Face
+transformers==4.23.1  # Para usar modelos de Hugging Face
+pyaudio==0.2.11  # Para la captura de audio
+vosk==0.3.30  # Para el reconocimiento de voz con Vosk
+#tkinter  # Generalmente ya está incluido con Python, pero se menciona para claridad
+numpy==1.23.0  # Puede ser necesario para manejar datos numéricos
+vosk
+pyaudio
