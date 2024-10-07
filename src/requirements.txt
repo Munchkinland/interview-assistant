@@ -1,0 +1,25 @@
+deep-translator
+# requirements_textual.txt
+textual==0.52.1
+# Asegúrate de incluir también las dependencias para el reconocimiento de voz y generación de texto
+SpeechRecognition==3.10.0
+# Aquí deberías incluir la librería que uses para la generación de texto, por ejemplo:
+# transformers==4.30.2
+# o
+# openai==0.27.8
+
+Para Kivy:
+
+# requirements_kivy.txt
+kivy==2.2.1
+# Si planeas usar KivyMD (Material Design para Kivy), descomenta la siguiente línea:
+# kivymd==1.1.1
+# Asegúrate de incluir también las dependencias para el reconocimiento de voz y generación de texto
+SpeechRecognition==3.10.0
+# Aquí deberías incluir la librería que uses para la generación de texto, por ejemplo:
+# transformers==4.30.2
+# o
+# openai==0.27.8
+
+python-dotenv
+

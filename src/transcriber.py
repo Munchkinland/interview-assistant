@@ -3,15 +3,20 @@ from vosk import Model, KaldiRecognizer
 import pyaudio
 
 class Transcriber:
-  def __init__(self, model_path):
-      # Usa una ruta absoluta para el modelo
-      absolute_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', model_path))
+  def __init__(self, language='es'):
+      # Directorio base para los modelos
+      base_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'models'))
       
-      if not os.path.exists(absolute_model_path):
-          print(f"El modelo no se encuentra en la ruta: {absolute_model_path}")
-          raise FileNotFoundError(f"No se pudo encontrar el modelo en {absolute_model_path}")
+      # Seleccionar el modelo según el idioma
+      if language.startswith('es'):
+          model_path = os.path.join(base_model_path, 'es')
+      else:
+          model_path = os.path.join(base_model_path, 'en')
       
-      self.model = Model(absolute_model_path)
+      if not os.path.exists(model_path):
+          raise FileNotFoundError(f"No se pudo encontrar el modelo en {model_path}")
+      
+      self.model = Model(model_path)
       self.recognizer = KaldiRecognizer(self.model, 16000)
       
       self.mic = pyaudio.PyAudio()

@@ -1,0 +1,64 @@
+# Ignorar archivos de entorno
+.env
+
+# Ignorar configuraciones de IDE/editores comunes
+.vscode/
+.idea/
+
+# Ignorar archivos de logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar directorios y archivos temporales del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ignorar dependencias instaladas (node_modules)
+node_modules/
+
+# Ignorar archivos de build
+dist/
+build/
+out/
+
+# Ignorar archivos de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Ignorar archivos de base de datos locales
+*.sqlite3
+
+# Ignorar archivos comprimidos y pesados
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Ignorar archivos multimedia pesados
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.mp3
+*.wav
+
+# Ignorar archivos de imágenes grandes
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+
+# Ignorar archivos binarios
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignorar archivos de configuración de Docker (opcional)
+docker-compose.override.yml
