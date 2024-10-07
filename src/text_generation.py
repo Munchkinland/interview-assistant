@@ -24,13 +24,25 @@ class TextGenerator:
           model = AutoModelForCausalLM.from_pretrained(model_name)
           self.generators[lang] = pipeline('text-generation', model=model, tokenizer=tokenizer)
 
+      self.processed_resume = ""
+
+  def process_resume(self, resume_text):
+      # Aquí puedes implementar un procesamiento más avanzado del currículum
+      # Por ejemplo, extraer palabras clave, habilidades, etc.
+      # Por ahora, simplemente almacenamos el texto del currículum
+      self.processed_resume = resume_text
+
   def generate_response(self, prompt, context, resume, language='es'):
+      # Si no se ha procesado un currículum previamente, procesamos el que se pasa como argumento
+      if not self.processed_resume:
+          self.process_resume(resume)
+
       if language == 'es':
           system_message = "Eres un asistente de entrevistas útil y profesional. Utiliza el contexto y el currículum proporcionados para generar respuestas apropiadas."
-          user_message = f"Contexto: {context}\nCurriculum: {resume}\nPregunta: {prompt}\n\nGenera una respuesta apropiada en español:"
+          user_message = f"Contexto: {context}\nCurriculum: {self.processed_resume}\nPregunta: {prompt}\n\nGenera una respuesta apropiada en español:"
       else:
           system_message = "You are a helpful and professional interview assistant. Use the provided context and resume to generate appropriate responses."
-          user_message = f"Context: {context}\nResume: {resume}\nQuestion: {prompt}\n\nGenerate an appropriate answer in English:"
+          user_message = f"Context: {context}\nResume: {self.processed_resume}\nQuestion: {prompt}\n\nGenerate an appropriate answer in English:"
 
       try:
           response = openai.ChatCompletion.create(

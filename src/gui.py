@@ -1,5 +1,5 @@
 import os
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QComboBox, QLabel
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QComboBox, QLabel, QFileDialog
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from speech_recognition_handler import SpeechRecognizer
 from text_generation import TextGenerator
@@ -32,10 +32,11 @@ class InterviewAssistantGUI(QMainWindow):
         self.language_processor = LanguageProcessor()
 
         self.setup_ui()
-        self.load_resume()
+        self.resume = ""
 
     def setup_ui(self):
         self.setup_language_selection()
+        self.setup_resume_upload()
         self.setup_interviewer_question()
         self.setup_generated_answer()
         self.setup_interviewee_answer()
@@ -48,6 +49,15 @@ class InterviewAssistantGUI(QMainWindow):
         self.language_layout.addWidget(self.language_label)
         self.language_layout.addWidget(self.language_combo)
         self.layout.addLayout(self.language_layout)
+
+    def setup_resume_upload(self):
+        self.resume_layout = QHBoxLayout()
+        self.resume_label = QLabel("Currículum / Resume:")
+        self.resume_button = QPushButton("Subir currículum / Upload resume")
+        self.resume_button.clicked.connect(self.upload_resume)
+        self.resume_layout.addWidget(self.resume_label)
+        self.resume_layout.addWidget(self.resume_button)
+        self.layout.addLayout(self.resume_layout)
 
     def setup_interviewer_question(self):
         self.interviewer_question = QTextEdit()
@@ -76,14 +86,16 @@ class InterviewAssistantGUI(QMainWindow):
         self.listen_answer_button.clicked.connect(self.start_listening_answer)
         self.layout.addWidget(self.listen_answer_button)
 
-    def load_resume(self):
-        resume_path = os.path.join("interview-assistant", "resources", "resume.txt")
-        try:
-            with open(resume_path, "r", encoding="utf-8") as f:
-                self.resume = f.read()
-        except FileNotFoundError:
-            print(f"No se encontró el archivo de currículum en la ruta: {resume_path}")
-            self.resume = ""
+    def upload_resume(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Seleccionar currículum / Select resume", "", "Archivos de texto (*.txt)")
+        if file_name:
+            try:
+                with open(file_name, "r", encoding="utf-8") as f:
+                    self.resume = f.read()
+                self.text_generator.process_resume(self.resume)
+                print(f"Currículum cargado y procesado desde: {file_name}")
+            except Exception as e:
+                print(f"Error al cargar el currículum: {str(e)}")
 
     def get_language_codes(self):
         if self.language_combo.currentText() == "Español":
