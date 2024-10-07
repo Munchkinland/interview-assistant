@@ -1,97 +1,61 @@
-from textual.app import App, ComposeResult
-from textual.containers import Container
-from textual.widgets import Header, Footer, Button, Select, TextArea
+import os
+from textual.app import App
+from textual.widgets import Button, Select, TextArea
+from textual.reactive import Reactive
 from speech_recognition_handler import SpeechRecognizer
 from text_generation import TextGenerator
 from language_processor import LanguageProcessor
-import os
-
-class SpeechRecognitionWorker:
-  def __init__(self, recognizer, language):
-      self.recognizer = recognizer
-      self.language = language
-
-  def recognize(self):
-      return self.recognizer.recognize_speech(self.language)
 
 class InterviewAssistantApp(App):
-  CSS = """
-  #main {
-      layout: grid;
-      grid-size: 2;
-      grid-gutter: 1 2;
-      padding: 1;
-  }
-  TextArea {
-      height: 5;
-  }
-  Button {
-      width: 100%;
-  }
-  """
+    language = Reactive("Español")
 
-  def __init__(self):
-      super().__init__()
-      self.speech_recognizer = SpeechRecognizer()
-      self.text_generator = TextGenerator()
-      self.language_processor = LanguageProcessor()
+    def __init__(self):
+        super().__init__()
+        self.speech_recognizer = SpeechRecognizer()
+        self.text_generator = TextGenerator()
+        self.language_processor = LanguageProcessor()
+        self.resume = self.load_resume()
 
-      resume_path = os.path.join("interview-assistant", "resources", "resume.txt")
-      try:
-          with open(resume_path, "r", encoding="utf-8") as f:
-              self.resume = f.read()
-      except FileNotFoundError:
-          print(f"No se encontró el archivo de currículum en la ruta: {resume_path}")
-          self.resume = ""
+    async def on_mount(self) -> None:
+        await self.view.dock(Select(options=["Español", "English"], value=self.language), edge="top")
+        await self.view.dock(TextArea(placeholder="Pregunta del entrevistador / Interviewer's question"), edge="top", size=5)
+        await self.view.dock(Button("Escuchar pregunta / Listen to question", id="listen_question"), edge="top")
+        await self.view.dock(TextArea(placeholder="Respuesta generada / Generated answer"), edge="top", size=5)
+        await self.view.dock(Button("Generar respuesta / Generate answer", id="generate"), edge="top")
+        await self.view.dock(TextArea(placeholder="Tu respuesta / Your answer"), edge="top", size=5)
+        await self.view.dock(Button("Escuchar tu respuesta / Listen to your answer", id="listen_answer"), edge="top")
 
-  def compose(self) -> ComposeResult:
-      yield Header()
-      yield Container(
-          Select([(lang, lang) for lang in ["Español", "English"]], id="language"),
-          TextArea(placeholder="Pregunta del entrevistador / Interviewer's question", id="interviewer_question"),
-          Button("Escuchar pregunta / Listen to question", id="listen_button"),
-          TextArea(placeholder="Respuesta generada / Generated answer", id="generated_answer"),
-          Button("Generar respuesta / Generate answer", id="generate_button"),
-          TextArea(placeholder="Tu respuesta / Your answer", id="interviewee_answer"),
-          Button("Escuchar tu respuesta / Listen to your answer", id="listen_answer_button"),
-          id="main"
-      )
-      yield Footer()
+    def load_resume(self):
+        resume_path = os.path.join("interview-assistant", "resources", "resume.txt")
+        try:
+            with open(resume_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except FileNotFoundError:
+            print(f"No se encontró el archivo de currículum en la ruta: {resume_path}")
+            return ""
 
-  def on_button_pressed(self, event: Button.Pressed) -> None:
-      if event.button.id == "listen_button":
-          self.listen_question()
-      elif event.button.id == "generate_button":
-          self.generate_answer()
-      elif event.button.id == "listen_answer_button":
-          self.listen_answer()
+    def get_language_codes(self):
+        return ("es-ES", "es") if self.language == "Español" else ("en-US", "en")
 
-  def listen_question(self):
-      language_code = self.get_language_code()
-      worker = SpeechRecognitionWorker(self.speech_recognizer, language_code)
-      text = worker.recognize()
-      self.query_one("#interviewer_question").value = text
+    async def handle_button_pressed(self, event):
+        button_id = event.button.id
+        if button_id in ["listen_question", "listen_answer"]:
+            await self.start_listening(button_id)
+        elif button_id == "generate":
+            await self.generate_answer()
 
-  def listen_answer(self):
-      language_code = self.get_language_code()
-      worker = SpeechRecognitionWorker(self.speech_recognizer, language_code)
-      text = worker.recognize()
-      self.query_one("#interviewee_answer").value = text
+    async def start_listening(self, button_id):
+        speech_code, _ = self.get_language_codes()
+        text = self.speech_recognizer.recognize_speech(speech_code)
+        text_area = self.view.query_one(f"TextArea:nth-child({2 if button_id == 'listen_question' else 6})")
+        text_area.text = text
 
-  def generate_answer(self):
-      question = self.query_one("#interviewer_question").value
-      context = "Entrevista de trabajo" if self.query_one("#language").value == "Español" else "Job interview"
-      language = 'es' if self.query_one("#language").value == "Español" else 'en'
-      
-      response = self.text_generator.generate_response(question, context, self.resume, language)
-      self.query_one("#generated_answer").value = response
-
-  def get_language_code(self):
-      return "es-ES" if self.query_one("#language").value == "Español" else "en-US"
+    async def generate_answer(self):
+        question = self.view.query_one("TextArea:nth-child(2)").text
+        context = "Entrevista de trabajo" if self.language == "Español" else "Job interview"
+        _, gen_code = self.get_language_codes()
+        response = self.text_generator.generate_response(question, context, self.resume, gen_code)
+        self.view.query_one("TextArea:nth-child(4)").text = response
 
 if __name__ == "__main__":
-  app = InterviewAssistantApp()
-  app.run()
-
-# Created/Modified files during execution:
-# None
+    InterviewAssistantApp().run()
