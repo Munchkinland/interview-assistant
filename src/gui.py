@@ -1,4 +1,5 @@
 import os
+import threading
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -12,6 +13,7 @@ from speech_recognition_handler import SpeechRecognizer
 from text_generation import TextGenerator
 from language_processor import LanguageProcessor
 from resume_processor import ResumeProcessor
+from transcriber import Transcriber  # Asegúrate de que esta clase esté correctamente implementada
 
 class InterviewAssistantGUI(BoxLayout):
   def __init__(self, **kwargs):
@@ -21,6 +23,7 @@ class InterviewAssistantGUI(BoxLayout):
       self.text_generator = TextGenerator()
       self.language_processor = LanguageProcessor()
       self.resume = ""
+      self.job_description = ""  # Nueva variable para almacenar la descripción del trabajo
       self.is_listening = False
 
       # Language selection
@@ -41,6 +44,24 @@ class InterviewAssistantGUI(BoxLayout):
       self.upload_resume_button.bind(on_press=self.show_load_resume)
       self.add_widget(self.upload_resume_button)
 
+      # Job description input
+      self.job_description_input = TextInput(
+          hint_text='Descripción del puesto / Job Description',
+          multiline=True,
+          size_hint=(1, None),
+          height=150
+      )
+      self.add_widget(self.job_description_input)
+
+      # Button to upload job description
+      self.upload_job_description_button = Button(
+          text='Cargar descripción del puesto / Upload Job Description',
+          size_hint=(1, None),
+          height=50
+      )
+      self.upload_job_description_button.bind(on_press=self.show_load_job_description)
+      self.add_widget(self.upload_job_description_button)
+
       # Interviewer's question
       self.interviewer_question = TextInput(
           hint_text='Pregunta del entrevistador / Interviewer\'s question',
@@ -56,7 +77,7 @@ class InterviewAssistantGUI(BoxLayout):
           size_hint=(1, None),
           height=50
       )
-      self.listen_button.bind(on_press=self.start_listening_question)
+      self.listen_button.bind(on_press=self.toggle_listening_question)
       self.add_widget(self.listen_button)
 
       # Generated answer
@@ -92,18 +113,43 @@ class InterviewAssistantGUI(BoxLayout):
           size_hint=(1, None),
           height=50
       )
-      self.listen_answer_button.bind(on_press=self.start_listening_answer)
+      self.listen_answer_button.bind(on_press=self.toggle_listening_answer)
       self.add_widget(self.listen_answer_button)
+
+  def show_load_job_description(self, instance):
+      content = BoxLayout(orientation='vertical')
+      self.file_chooser = FileChooserListView()
+      content.add_widget(self.file_chooser)
+
+      load_button = Button(text='Cargar', size_hint_y=None, height=50)
+      load_button.bind(on_press=self.load_job_description)
+      content.add_widget(load_button)
+
+      self._popup = Popup(title="Cargar descripción del puesto", content=content, size_hint=(0.9, 0.9))
+      self._popup.open()
+
+  def load_job_description(self, instance):
+      try:
+          selected_file = self.file_chooser.selection[0]
+          with open(selected_file, 'r', encoding='utf-8') as file:
+              self.job_description = file.read()
+          self.job_description_input.text = self.job_description
+          print(f"Descripción del puesto cargada desde: {selected_file}")
+          self._popup.dismiss()
+          self.show_success_popup("Descripción del puesto cargada exitosamente")
+      except Exception as e:
+          print(f"Error al cargar la descripción del puesto: {str(e)}")
+          self.show_error_popup(f"Error al cargar la descripción del puesto: {str(e)}")
 
   def show_load_resume(self, instance):
       content = BoxLayout(orientation='vertical')
       self.file_chooser = FileChooserListView()
       content.add_widget(self.file_chooser)
-      
+
       load_button = Button(text='Cargar', size_hint_y=None, height=50)
       load_button.bind(on_press=self.load_resume)
       content.add_widget(load_button)
-      
+
       self._popup = Popup(title="Cargar currículum", content=content, size_hint=(0.9, 0.9))
       self._popup.open()
 
@@ -130,42 +176,45 @@ class InterviewAssistantGUI(BoxLayout):
       popup.open()
 
   def get_language_codes(self):
-      return ("es-ES", "es") if self.language_spinner.text == "Español" else ("en-US", "en")
+      return ("es", "es-ES") if self.language_spinner.text == "Español" else ("en", "en-US")
 
-  def start_listening_question(self, instance):
+  def toggle_listening_question(self, instance):
       if not self.is_listening:
-          self.start_listening(self.listen_button, self.interviewer_question)
+          self.start_listening(self.listen_button, self.interviewer_question, role="question")
       else:
-          self.stop_listening(self.listen_button, self.interviewer_question)
+          self.stop_listening(self.listen_button, role="question")
 
-  def start_listening_answer(self, instance):
+  def toggle_listening_answer(self, instance):
       if not self.is_listening:
-          self.start_listening(self.listen_answer_button, self.interviewee_answer)
+          self.start_listening(self.listen_answer_button, self.interviewee_answer, role="answer")
       else:
-          self.stop_listening(self.listen_answer_button, self.interviewee_answer)
+          self.stop_listening(self.listen_answer_button, role="answer")
 
-  def start_listening(self, button, text_input):
+  def start_listening(self, button, text_input, role):
       self.is_listening = True
       button.text = "Detener escucha / Stop listening"
-      
-      speech_code, _ = self.get_language_codes()
-      self.continuous_listen(speech_code, text_input)
+      language_code, _ = self.get_language_codes()
 
-  def stop_listening(self, button, text_input):
+      # Inicializar el transcriber en un hilo separado
+      self.transcriber = Transcriber(language=language_code)
+      thread = threading.Thread(target=self.transcriber.listen_continuously, args=(self.update_transcription, role))
+      thread.daemon = True
+      thread.start()
+
+  def stop_listening(self, button, role):
       self.is_listening = False
-      button.text = "Escuchar pregunta / Listen to question" if button == self.listen_button else "Escuchar tu respuesta / Listen to your answer"
-      self.speech_recognizer.stop_listening()
+      button.text = "Escuchar pregunta / Listen to question" if role == "question" else "Escuchar tu respuesta / Listen to your answer"
+      if self.transcriber:
+          self.transcriber.stop()
+          self.transcriber = None
 
-  def continuous_listen(self, speech_code, text_input):
-      if self.is_listening:
-          try:
-              text = self.speech_recognizer.recognize_speech(speech_code)
-              if text:
-                  text_input.text += " " + text if text_input.text else text
-          except Exception as e:
-              print(f"Error en el reconocimiento de voz: {str(e)}")
-          finally:
-              Clock.schedule_once(lambda dt: self.continuous_listen(speech_code, text_input), 0.1)
+  def update_transcription(self, text, role):
+      def _update_text(dt):
+          if role == "question":
+              self.interviewer_question.text += text + " "
+          elif role == "answer":
+              self.interviewee_answer.text += text + " "
+      Clock.schedule_once(_update_text)
 
   def generate_answer(self, instance):
       if not self.resume:
@@ -175,9 +224,12 @@ class InterviewAssistantGUI(BoxLayout):
       question = self.interviewer_question.text
       context = "Entrevista de trabajo" if self.language_spinner.text == "Español" else "Job interview"
       _, gen_code = self.get_language_codes()
-      
+
+      # Aquí puedes usar la descripción del trabajo en la generación de respuestas
+      job_description = self.job_description_input.text
+
       try:
-          response = self.text_generator.generate_response(question, context, self.resume, gen_code)
+          response = self.text_generator.generate_response(question, context, self.resume, job_description, gen_code)
           self.generated_answer.text = response
       except Exception as e:
           print(f"Error al generar la respuesta: {str(e)}")

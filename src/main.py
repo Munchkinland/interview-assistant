@@ -1,5 +1,5 @@
 from kivy.app import App
-from gui_kivy import InterviewAssistantGUI
+from gui import InterviewAssistantGUI
 
 class InterviewAssistantApp(App):
   def build(self):
